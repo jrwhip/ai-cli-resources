@@ -14,7 +14,7 @@ import platform
 import shutil
 from pathlib import Path
 
-from .converters import to_gemini_toml, to_copilot_agent
+from .converters import to_gemini_toml, to_copilot_agent, is_convertible
 
 
 def get_package_root() -> Path:
@@ -186,12 +186,15 @@ def setup_claude(workspace: Path) -> None:
     create_or_update_symlink(skills_src, skills_dst)
 
 
-def convert_commands_for_gemini(src_dir: Path, dst_dir: Path) -> int:
+def convert_commands_for_gemini(src_dir: Path, dst_dir: Path) -> tuple[int, int]:
     """Convert Claude commands to Gemini TOML format.
 
-    Returns number of commands converted.
+    Only converts tier 1 and 2 commands. Tier 3 (Claude-specific) are skipped.
+
+    Returns tuple of (converted, skipped).
     """
-    count = 0
+    converted = 0
+    skipped = 0
 
     # Remove existing destination if present
     if dst_dir.exists():
@@ -200,11 +203,16 @@ def convert_commands_for_gemini(src_dir: Path, dst_dir: Path) -> int:
 
     # Convert top-level .md files
     for src_file in src_dir.glob("*.md"):
+        resource_name = src_file.stem
+        if not is_convertible(resource_name, 'command'):
+            skipped += 1
+            continue
+
         content = src_file.read_text()
-        toml_content = to_gemini_toml(content)
+        toml_content = to_gemini_toml(content, resource_name)
         dst_file = dst_dir / src_file.with_suffix(".toml").name
         dst_file.write_text(toml_content)
-        count += 1
+        converted += 1
 
     # Convert subdirectories (e.g., consider/)
     for subdir in src_dir.iterdir():
@@ -212,13 +220,23 @@ def convert_commands_for_gemini(src_dir: Path, dst_dir: Path) -> int:
             dst_subdir = dst_dir / subdir.name
             dst_subdir.mkdir(parents=True, exist_ok=True)
             for src_file in subdir.glob("*.md"):
+                # Resource name includes subdir (e.g., consider/5-whys)
+                resource_name = f"{subdir.name}/{src_file.stem}"
+                if not is_convertible(resource_name, 'command'):
+                    skipped += 1
+                    continue
+
                 content = src_file.read_text()
-                toml_content = to_gemini_toml(content)
+                toml_content = to_gemini_toml(content, resource_name)
                 dst_file = dst_subdir / src_file.with_suffix(".toml").name
                 dst_file.write_text(toml_content)
-                count += 1
+                converted += 1
 
-    return count
+            # Remove empty subdirectory
+            if not any(dst_subdir.iterdir()):
+                dst_subdir.rmdir()
+
+    return converted, skipped
 
 
 def setup_gemini(workspace: Path) -> None:
@@ -236,16 +254,21 @@ def setup_gemini(workspace: Path) -> None:
     # Convert commands to TOML format
     commands_src = shared_dir / "commands"
     commands_dst = get_home() / ".gemini" / "commands" / "ai"
-    count = convert_commands_for_gemini(commands_src, commands_dst)
-    print(f"  Converted {count} commands to {commands_dst}")
+    converted, skipped = convert_commands_for_gemini(commands_src, commands_dst)
+    print(f"  Converted {converted} commands to {commands_dst}")
+    if skipped:
+        print(f"  Skipped {skipped} Claude-specific commands")
 
 
-def convert_agents_for_copilot(src_dir: Path, dst_dir: Path) -> int:
+def convert_agents_for_copilot(src_dir: Path, dst_dir: Path) -> tuple[int, int]:
     """Convert Claude agents to Copilot .agent.md format.
 
-    Returns number of agents converted.
+    Only converts tier 1 and 2 agents. Tier 3 (Claude-specific) are skipped.
+
+    Returns tuple of (converted, skipped).
     """
-    count = 0
+    converted = 0
+    skipped = 0
 
     # Remove existing destination if present
     if dst_dir.exists():
@@ -254,14 +277,19 @@ def convert_agents_for_copilot(src_dir: Path, dst_dir: Path) -> int:
 
     # Convert .md files to .agent.md
     for src_file in src_dir.glob("*.md"):
+        resource_name = src_file.stem
+        if not is_convertible(resource_name, 'agent'):
+            skipped += 1
+            continue
+
         content = src_file.read_text()
-        agent_content = to_copilot_agent(content)
+        agent_content = to_copilot_agent(content, resource_name)
         # Copilot uses .agent.md extension
         dst_file = dst_dir / f"{src_file.stem}.agent.md"
         dst_file.write_text(agent_content)
-        count += 1
+        converted += 1
 
-    return count
+    return converted, skipped
 
 
 def setup_copilot(workspace: Path) -> None:
@@ -279,8 +307,10 @@ def setup_copilot(workspace: Path) -> None:
     # Convert agents to .agent.md format
     agents_src = shared_dir / "agents"
     agents_dst = get_home() / ".copilot" / "agents"
-    count = convert_agents_for_copilot(agents_src, agents_dst)
-    print(f"  Converted {count} agents to {agents_dst}")
+    converted, skipped = convert_agents_for_copilot(agents_src, agents_dst)
+    print(f"  Converted {converted} agents to {agents_dst}")
+    if skipped:
+        print(f"  Skipped {skipped} Claude-specific agents")
 
 
 def initialize_workspace(workspace: Path) -> int:

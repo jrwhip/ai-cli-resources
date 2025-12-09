@@ -241,12 +241,34 @@ Commands: `/debug`
 
 | Resource Type | Claude Code | Gemini CLI | Copilot CLI |
 |---------------|-------------|------------|-------------|
-| Commands | ✅ Native | ✅ Converted to TOML | ❌ N/A |
-| Agents | ✅ Native | ❌ N/A | ✅ Converted to .agent.md |
-| Skills | ✅ Native | ❌ N/A | ❌ N/A |
+| Commands | ✅ All 29 | ✅ 23 (TOML) | ❌ N/A |
+| Agents | ✅ All 9 | ❌ N/A | ✅ 6 (.agent.md) |
+| Skills | ✅ All 7 | ❌ N/A | ❌ N/A |
 | MCP Tools | ✅ | ✅ | ✅ |
 
-Skills are Claude Code-specific (no equivalent in other CLIs). All CLIs get MCP server access for reading shared resources programmatically.
+### What's Available Per CLI
+
+**Claude Code**: Full access to all commands, agents, and skills.
+
+**Gemini CLI**: 23 commands converted to TOML format:
+- All 12 thinking models (`/ai:consider:*`)
+- Meta-prompting: `create-prompt`, `run-prompt`, `create-plan`, `run-plan`
+- Todo management: `check-todos`
+- Auditing: `audit-skill`, `audit-slash-command`, `audit-subagent`
+- Other: `debug`, `heal-skill`, `create-slash-command`
+
+**Copilot CLI**: 6 agents converted to `.agent.md` format:
+- `architect`, `code-auditor`, `code-reviewer`, `mentor`, `refactor`
+- `angular-perfectionist-reviewer`
+
+### Skipped Content
+
+Some content references Claude-specific features with no equivalent:
+- **Commands** (6): `create-hook`, `create-subagent`, `whats-next`, `add-to-todos`, `create-meta-prompt`, `create-agent-skill`
+- **Agents** (3): `skill-auditor`, `slash-command-auditor`, `subagent-auditor` (audit Claude Code resources)
+- **Skills** (all): Skills are Claude Code-specific
+
+All CLIs get MCP server access for reading shared resources programmatically.
 
 ---
 
