@@ -5,13 +5,16 @@ Handles:
 - Creating .ai-cli/ directory structure in workspace
 - Copying default resources to workspace
 - Registering MCP server with CLIs (Claude, Gemini, Copilot)
-- Creating symlinks (Unix) or copying files (Windows) for commands/agents
+- Converting commands/agents to CLI-native formats
+- Creating symlinks (Unix) or copying files (Windows) for Claude
 """
 
 import json
 import platform
 import shutil
 from pathlib import Path
+
+from .converters import to_gemini_toml, to_copilot_agent
 
 
 def get_package_root() -> Path:
@@ -183,6 +186,41 @@ def setup_claude(workspace: Path) -> None:
     create_or_update_symlink(skills_src, skills_dst)
 
 
+def convert_commands_for_gemini(src_dir: Path, dst_dir: Path) -> int:
+    """Convert Claude commands to Gemini TOML format.
+
+    Returns number of commands converted.
+    """
+    count = 0
+
+    # Remove existing destination if present
+    if dst_dir.exists():
+        shutil.rmtree(dst_dir)
+    dst_dir.mkdir(parents=True, exist_ok=True)
+
+    # Convert top-level .md files
+    for src_file in src_dir.glob("*.md"):
+        content = src_file.read_text()
+        toml_content = to_gemini_toml(content)
+        dst_file = dst_dir / src_file.with_suffix(".toml").name
+        dst_file.write_text(toml_content)
+        count += 1
+
+    # Convert subdirectories (e.g., consider/)
+    for subdir in src_dir.iterdir():
+        if subdir.is_dir():
+            dst_subdir = dst_dir / subdir.name
+            dst_subdir.mkdir(parents=True, exist_ok=True)
+            for src_file in subdir.glob("*.md"):
+                content = src_file.read_text()
+                toml_content = to_gemini_toml(content)
+                dst_file = dst_subdir / src_file.with_suffix(".toml").name
+                dst_file.write_text(toml_content)
+                count += 1
+
+    return count
+
+
 def setup_gemini(workspace: Path) -> None:
     """Configure Gemini CLI."""
     print("\nGemini CLI:")
@@ -195,21 +233,54 @@ def setup_gemini(workspace: Path) -> None:
     if update_json_file(gemini_settings, "mcpServers", mcp_config):
         print(f"  Updated {gemini_settings}")
 
-    # Symlink commands to workspace's .ai-cli/shared/commands
+    # Convert commands to TOML format
     commands_src = shared_dir / "commands"
     commands_dst = get_home() / ".gemini" / "commands" / "ai"
-    create_or_update_symlink(commands_src, commands_dst)
+    count = convert_commands_for_gemini(commands_src, commands_dst)
+    print(f"  Converted {count} commands to {commands_dst}")
+
+
+def convert_agents_for_copilot(src_dir: Path, dst_dir: Path) -> int:
+    """Convert Claude agents to Copilot .agent.md format.
+
+    Returns number of agents converted.
+    """
+    count = 0
+
+    # Remove existing destination if present
+    if dst_dir.exists():
+        shutil.rmtree(dst_dir)
+    dst_dir.mkdir(parents=True, exist_ok=True)
+
+    # Convert .md files to .agent.md
+    for src_file in src_dir.glob("*.md"):
+        content = src_file.read_text()
+        agent_content = to_copilot_agent(content)
+        # Copilot uses .agent.md extension
+        dst_file = dst_dir / f"{src_file.stem}.agent.md"
+        dst_file.write_text(agent_content)
+        count += 1
+
+    return count
 
 
 def setup_copilot(workspace: Path) -> None:
     """Configure Copilot CLI."""
     print("\nCopilot CLI:")
 
+    shared_dir = workspace / ".ai-cli" / "shared"
+
     copilot_config = get_home() / ".copilot" / "mcp-config.json"
     mcp_config = get_mcp_config(workspace)
 
     if update_json_file(copilot_config, "mcpServers", mcp_config):
         print(f"  Updated {copilot_config}")
+
+    # Convert agents to .agent.md format
+    agents_src = shared_dir / "agents"
+    agents_dst = get_home() / ".copilot" / "agents"
+    count = convert_agents_for_copilot(agents_src, agents_dst)
+    print(f"  Converted {count} agents to {agents_dst}")
 
 
 def initialize_workspace(workspace: Path) -> int:
@@ -241,10 +312,14 @@ def initialize_workspace(workspace: Path) -> int:
     print(f"\nWorkspace: {workspace}")
     print(f"Resources: {workspace / '.ai-cli' / 'shared'}")
     print("\nClaude Code:")
-    print("  Commands: /ai:* (e.g., /ai:add-to-todos)")
+    print("  Commands: /ai:* (e.g., /ai:consider:pareto)")
     print("  Agents:   @ai/* (e.g., @ai/code-reviewer)")
-    print("  Skills:   Available in ~/.claude/skills/ai/")
-    print("\nGemini/Copilot: Use MCP tools (list_shared_*, get_shared_*)")
-    print("\nRestart your CLI to load the MCP server.")
+    print("  Skills:   ~/.claude/skills/ai/")
+    print("\nGemini CLI:")
+    print("  Commands: /ai:* (e.g., /ai:consider:pareto)")
+    print("\nCopilot CLI:")
+    print("  Agents:   /agent (e.g., code-reviewer)")
+    print("\nAll CLIs: MCP tools available (list_shared_*, get_shared_*)")
+    print("\nRestart your CLI to load changes.")
 
     return 0

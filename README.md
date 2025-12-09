@@ -1,6 +1,6 @@
-# TÂCHES Claude Code Resources
+# AI CLI Resources
 
-A growing collection of custom Claude Code resources built for real workflows.
+Commands, agents, and skills for Claude Code, Gemini CLI, and GitHub Copilot CLI.
 
 ## Philosophy
 
@@ -36,33 +36,55 @@ Dream big. Happy building.
 
 ## Installation
 
-### Option 1: Plugin Install (Recommended)
+```bash
+# Install the package
+pip install ai-cli-resources
+# or: uv pip install ai-cli-resources
+
+# Initialize for all CLIs
+ai-cli --init
+```
+
+This installs resources for all supported CLIs:
+- **Claude Code**: Commands, agents, and skills symlinked to `~/.claude/`
+- **Gemini CLI**: Commands converted to TOML in `~/.gemini/commands/ai/`
+- **Copilot CLI**: Agents converted to `.agent.md` in `~/.copilot/agents/`
+
+All CLIs also get MCP server access for shared resources.
+
+### CLI-Specific Usage
+
+**Claude Code:**
+```
+/ai:consider:pareto          # Slash commands
+@ai/code-reviewer            # Agents
+```
+
+**Gemini CLI:**
+```
+/ai:consider:pareto          # Slash commands (TOML format)
+```
+
+**Copilot CLI:**
+```
+/agent code-reviewer         # Custom agents
+```
+
+### Alternative: Claude Plugin Install
 
 ```bash
-# Add the marketplace
 claude plugin marketplace add glittercowboy/taches-cc-resources
-
-# Install the plugin
 claude plugin install taches-cc-resources
 ```
 
-Start a new Claude Code session to use the commands and skills.
-
-### Option 2: Manual Install
+### Alternative: Manual Install (Claude only)
 
 ```bash
-# Clone the repo
 git clone https://github.com/glittercowboy/taches-cc-resources.git
 cd taches-cc-resources
-
-# Install commands
 cp -r commands/* ~/.claude/commands/
-
-# Install skills
 cp -r skills/* ~/.claude/skills/
 ```
-
-Commands install globally to `~/.claude/commands/`. Skills install to `~/.claude/skills/`. Project-specific data (prompts, todos) lives in each project's working directory.
 
 ## Commands
 
@@ -212,6 +234,19 @@ Commands: `/debug`
 **For domain expertise:** Use [create-agent-skills](#create-agent-skills) to create exhaustive knowledge bases in `~/.claude/skills/expertise/`. These skills are automatically loaded by create-plans to make task specifications framework-specific instead of generic.
 
 **Other tools:** The [create-meta-prompts](#create-meta-prompts-1) skill and `/create-prompt` + `/run-prompt` commands are available for custom Claude→Claude pipelines that don't fit the project planning structure.
+
+---
+
+## CLI Compatibility
+
+| Resource Type | Claude Code | Gemini CLI | Copilot CLI |
+|---------------|-------------|------------|-------------|
+| Commands | ✅ Native | ✅ Converted to TOML | ❌ N/A |
+| Agents | ✅ Native | ❌ N/A | ✅ Converted to .agent.md |
+| Skills | ✅ Native | ❌ N/A | ❌ N/A |
+| MCP Tools | ✅ | ✅ | ✅ |
+
+Skills are Claude Code-specific (no equivalent in other CLIs). All CLIs get MCP server access for reading shared resources programmatically.
 
 ---
 
