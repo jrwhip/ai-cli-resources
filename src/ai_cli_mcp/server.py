@@ -312,6 +312,179 @@ def get_shared_context(context_name: str) -> str:
 
 
 # ============================================================================
+# TODO MANAGEMENT
+# ============================================================================
+
+@mcp.tool()
+def add_todo(title: str, problem: str, files: str = "", solution: str = "") -> str:
+    """Add a todo item to TO-DOS.md in the workspace.
+
+    Args:
+        title: Brief action title (e.g., "Fix authentication bug")
+        problem: What's wrong or why this is needed
+        files: Comma-separated file paths with line numbers (e.g., "src/auth.ts:42-50")
+        solution: Optional approach hints or constraints
+    """
+    from datetime import datetime
+
+    workspace = get_workspace()
+    todos_file = workspace / "TO-DOS.md"
+
+    # Generate timestamp
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    # Build todo entry
+    entry_parts = [f"- **{title}**"]
+    if problem:
+        entry_parts.append(f"**Problem:** {problem}")
+    if files:
+        entry_parts.append(f"**Files:** `{files}`")
+    if solution:
+        entry_parts.append(f"**Solution:** {solution}")
+
+    todo_entry = " ".join(entry_parts)
+
+    # Build section
+    # Create a brief heading from the title (first 5 words max)
+    heading_words = title.split()[:5]
+    heading = " ".join(heading_words)
+    section = f"\n## {heading} - {timestamp}\n\n{todo_entry}\n"
+
+    # Append to file (create if doesn't exist)
+    if todos_file.exists():
+        content = todos_file.read_text()
+        content += section
+    else:
+        content = f"# TO-DOS\n{section}"
+
+    todos_file.write_text(content)
+
+    return f"Added todo: {title}"
+
+
+@mcp.tool()
+def list_todos() -> str:
+    """List all todos from TO-DOS.md in the workspace."""
+    import re
+
+    workspace = get_workspace()
+    todos_file = workspace / "TO-DOS.md"
+
+    if not todos_file.exists():
+        return json.dumps({"todos": [], "message": "No TO-DOS.md file found"})
+
+    content = todos_file.read_text()
+
+    # Parse todos: find all lines starting with "- **"
+    todos = []
+    current_section = None
+
+    for line in content.split('\n'):
+        # Track section headings
+        if line.startswith('## '):
+            current_section = line[3:].strip()
+        # Find todo items
+        elif line.strip().startswith('- **'):
+            # Extract title from "- **Title**" pattern
+            match = re.match(r'- \*\*([^*]+)\*\*', line.strip())
+            if match:
+                todos.append({
+                    "title": match.group(1),
+                    "section": current_section,
+                    "full_line": line.strip()
+                })
+
+    return json.dumps({"todos": todos, "count": len(todos)}, indent=2)
+
+
+@mcp.tool()
+def complete_todo(title: str) -> str:
+    """Mark a todo as complete by removing it from TO-DOS.md.
+
+    Args:
+        title: The title of the todo to complete (must match exactly)
+    """
+    workspace = get_workspace()
+    todos_file = workspace / "TO-DOS.md"
+
+    if not todos_file.exists():
+        return "Error: No TO-DOS.md file found"
+
+    content = todos_file.read_text()
+    lines = content.split('\n')
+
+    # Find and remove the todo line
+    new_lines = []
+    found = False
+
+    for line in lines:
+        if f"- **{title}**" in line:
+            found = True
+            continue  # Skip this line (remove it)
+        new_lines.append(line)
+
+    if not found:
+        return f"Error: Todo '{title}' not found"
+
+    # Write back
+    todos_file.write_text('\n'.join(new_lines))
+
+    return f"Completed: {title}"
+
+
+# ============================================================================
+# HANDOFF / CONTEXT
+# ============================================================================
+
+@mcp.tool()
+def create_handoff(summary: str, next_steps: str, context: str = "") -> str:
+    """Create a whats-next.md handoff document for continuing work in a fresh context.
+
+    Args:
+        summary: Brief summary of what was accomplished
+        next_steps: What needs to happen next (bullet points recommended)
+        context: Optional additional context (files modified, decisions made, etc.)
+    """
+    from datetime import datetime
+
+    workspace = get_workspace()
+    handoff_file = workspace / "whats-next.md"
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    content = f"""# What's Next - {timestamp}
+
+## Summary
+{summary}
+
+## Next Steps
+{next_steps}
+"""
+
+    if context:
+        content += f"""
+## Context
+{context}
+"""
+
+    handoff_file.write_text(content)
+
+    return f"Created handoff document: {handoff_file}"
+
+
+@mcp.tool()
+def get_handoff() -> str:
+    """Read the current whats-next.md handoff document if it exists."""
+    workspace = get_workspace()
+    handoff_file = workspace / "whats-next.md"
+
+    if not handoff_file.exists():
+        return "No whats-next.md file found in workspace"
+
+    return handoff_file.read_text()
+
+
+# ============================================================================
 # DEV TOOLS
 # ============================================================================
 

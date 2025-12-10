@@ -241,34 +241,56 @@ Commands: `/debug`
 
 | Resource Type | Claude Code | Gemini CLI | Copilot CLI |
 |---------------|-------------|------------|-------------|
-| Commands | ✅ All 29 | ✅ 23 (TOML) | ❌ N/A |
-| Agents | ✅ All 9 | ❌ N/A | ✅ 6 (.agent.md) |
+| Commands | ✅ All 29 | ✅ 25 (TOML) | ❌ N/A |
+| Agents | ✅ All 9 | ❌ N/A | ✅ 9 (.agent.md) |
 | Skills | ✅ All 7 | ❌ N/A | ❌ N/A |
-| MCP Tools | ✅ | ✅ | ✅ |
+| MCP Tools | ✅ 23 | ✅ 23 | ✅ 23 |
 
 ### What's Available Per CLI
 
 **Claude Code**: Full access to all commands, agents, and skills.
 
-**Gemini CLI**: 23 commands converted to TOML format:
+**Gemini CLI**: 25 commands converted to TOML format:
 - All 12 thinking models (`/ai:consider:*`)
 - Meta-prompting: `create-prompt`, `run-prompt`, `create-plan`, `run-plan`
-- Todo management: `check-todos`
+- Todo management: `check-todos`, `add-to-todos`
+- Context: `whats-next`
 - Auditing: `audit-skill`, `audit-slash-command`, `audit-subagent`
 - Other: `debug`, `heal-skill`, `create-slash-command`
 
-**Copilot CLI**: 6 agents converted to `.agent.md` format:
+**Copilot CLI**: 9 agents converted to `.agent.md` format:
 - `architect`, `code-auditor`, `code-reviewer`, `mentor`, `refactor`
 - `angular-perfectionist-reviewer`
+- `skill-auditor`, `slash-command-auditor`, `subagent-auditor`
+
+### MCP Tools (All CLIs)
+
+The MCP server provides 23 tools available to all CLIs:
+
+**Todo Management:**
+- `add_todo` - Add todo item to TO-DOS.md
+- `list_todos` - List all todos
+- `complete_todo` - Mark todo as complete
+
+**Context/Handoff:**
+- `create_handoff` - Create whats-next.md document
+- `get_handoff` - Read current handoff
+
+**Shared Resources:**
+- `list_shared_commands`, `get_shared_command`
+- `list_shared_skills`, `get_shared_skill`
+- `list_shared_agents`, `get_shared_agent`
+- `list_shared_context`, `get_shared_context`
+
+**Project/Git/Dev:** `list_projects`, `get_project_context`, `git_status`, `git_diff`, `git_log`, `run_npm_script`, `check_build`
 
 ### Skipped Content
 
-Some content references Claude-specific features with no equivalent:
-- **Commands** (6): `create-hook`, `create-subagent`, `whats-next`, `add-to-todos`, `create-meta-prompt`, `create-agent-skill`
-- **Agents** (3): `skill-auditor`, `slash-command-auditor`, `subagent-auditor` (audit Claude Code resources)
+Some commands require Claude-specific features (Skill tool, Task tool) with no equivalent:
+- **Commands** (4): `create-hook`, `create-subagent`, `create-meta-prompt`, `create-agent-skill`
 - **Skills** (all): Skills are Claude Code-specific
 
-All CLIs get MCP server access for reading shared resources programmatically.
+All CLIs get MCP server access for reading shared resources and managing todos/handoffs.
 
 ---
 

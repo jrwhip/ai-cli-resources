@@ -33,6 +33,9 @@ COMMAND_TIERS = {
         'heal-skill',
         'run-plan',
         'run-prompt',
+        # Now convertible via MCP tools (2)
+        'add-to-todos',
+        'whats-next',
     ],
     'tier2': [
         # Path references only - need replacement
@@ -40,13 +43,11 @@ COMMAND_TIERS = {
         'create-prompt',
     ],
     'tier3': [
-        # Claude-specific features - skip
-        'add-to-todos',
+        # Claude-specific features - skip (require Skill/Task tool)
         'create-agent-skill',
         'create-hook',
         'create-meta-prompt',
         'create-subagent',
-        'whats-next',
     ],
 }
 
@@ -59,16 +60,17 @@ AGENT_TIERS = {
         'code-reviewer',
         'mentor',
         'refactor',
+        # Auditors - work via file reading, convertible
+        'skill-auditor',
+        'slash-command-auditor',
+        'subagent-auditor',
     ],
     'tier2': [
         # Path references only
         'angular-perfectionist-reviewer',
     ],
     'tier3': [
-        # Claude Code specific auditors - skip
-        'skill-auditor',
-        'slash-command-auditor',
-        'subagent-auditor',
+        # None currently - all agents are convertible
     ],
 }
 
