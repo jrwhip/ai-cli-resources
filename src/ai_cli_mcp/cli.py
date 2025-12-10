@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-CLI entry point for ai-cli-resources.
+CLI entry point for Tool-KITT.
 
 Usage:
-    ai-cli              # Run MCP server
-    ai-cli --init       # Initialize in current directory
-    ai-cli --init PATH  # Initialize in specified directory
-    ai-cli --version    # Show version
+    tool-kitt              # Run MCP server
+    tool-kitt --init       # Initialize in current directory
+    tool-kitt --init PATH  # Initialize in specified directory
+    tool-kitt --version    # Show version
 """
 
 import argparse
@@ -18,13 +18,13 @@ from . import __version__
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        prog="ai-cli",
-        description="Unified MCP server for Claude, Gemini, and Copilot CLIs",
+        prog="tool-kitt",
+        description="Your AI coding assistant's Swiss Army knife - MCP server for Claude, Gemini, and Copilot CLIs",
     )
     parser.add_argument(
         "--version", "-v",
         action="version",
-        version=f"ai-cli-resources {__version__}",
+        version=f"tool-kitt {__version__}",
     )
     parser.add_argument(
         "--init",

@@ -327,8 +327,8 @@ def setup_copilot(workspace: Path) -> None:
 
 
 def initialize_workspace(workspace: Path) -> int:
-    """Initialize ai-cli-resources for a workspace."""
-    print(f"Initializing ai-cli-resources")
+    """Initialize Tool-KITT for a workspace."""
+    print(f"Initializing Tool-KITT")
     print(f"Workspace: {workspace}")
     print("=" * 50)
 

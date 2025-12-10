@@ -1,16 +1,24 @@
-# AI CLI Resources
+# Tool-KITT
 
-Commands, agents, and skills for Claude Code, Gemini CLI, and GitHub Copilot CLI.
+*Your AI coding assistant's Swiss Army knife.*
 
-## Philosophy
+Commands, agents, skills, and MCP tools for Claude Code, Gemini CLI, and GitHub Copilot CLI.
 
-When you use a tool like Claude Code, it's your responsibility to assume everything is possible.
+All resources use the `kitt-` prefix (like the AI car from Knight Rider).
 
-I built these tools using that mindset.
+## Twisted Perspective
 
-Dream big. Happy building.
+AI will probably take your job. That's not doom-saying—it's trajectory. But it's a tide you can't fight against. AI isn't going anywhere, and pretending otherwise is career suicide.
 
-— TÂCHES
+For now, your move is simple: learn to use it. Become as skilled with AI as you are with any other tool, language, or framework you've mastered. Treat it like you treated Git, Docker, or Kubernetes—something you resisted at first, then couldn't live without.
+
+Here's the thing though: opening Copilot in your IDE and typing "make this work" isn't going to cut it. AI needs guidance. It needs context. It needs detailed, precise prompts. It can't think through everything you need—it requires direction. But manually typing detailed prompts every time isn't going to save time or make you the 10x developer you need to become to stay employed in tech as long as possible.
+
+That's where this library comes in. Skills, commands, prompts, and agents—wrapped up nicely in an MCP to work with CLI tools like Claude Code, Gemini CLI, and Copilot CLI. You can build systems, templates, and workflows that give AI the context it needs without repeating yourself.
+
+And here's the silver lining for any card-carrying nerd: working with a CLI AI interface is a lot like talking to WOPR from *WarGames*. You're sitting at a terminal, feeding commands to an intelligence that can outthink you in certain domains, collaborating on problems that matter. That's objectively cool.
+
+And if you're going to become obsolete? Having WOPR do it is about as *bushido* as it gets for a developer. Go out on your shield, talking to the machine.
 
 ## What's Inside
 
@@ -38,11 +46,11 @@ Dream big. Happy building.
 
 ```bash
 # Install the package
-pip install ai-cli-resources
-# or: uv pip install ai-cli-resources
+pip install tool-kitt
+# or: uv pip install tool-kitt
 
 # Initialize for all CLIs
-ai-cli --init
+tool-kitt --init
 ```
 
 This installs resources for all supported CLIs:
@@ -69,23 +77,6 @@ kitt-create-plans            # Skills
 **Copilot CLI:**
 ```
 /agent kitt-code-reviewer    # Custom agents
-```
-
-### Alternative: Claude Plugin Install
-
-```bash
-claude plugin marketplace add glittercowboy/taches-cc-resources
-claude plugin install taches-cc-resources
-```
-
-### Alternative: Manual Install (Claude only)
-
-```bash
-git clone https://github.com/glittercowboy/taches-cc-resources.git
-cd taches-cc-resources
-cp -r commands/* ~/.claude/commands/
-cp -r skills/* ~/.claude/skills/
-cp -r agents/* ~/.claude/agents/
 ```
 
 ## Commands
@@ -309,12 +300,12 @@ Some commands require Claude-specific features (Skill tool, Task tool) with no e
 
 All CLIs get MCP server access for reading shared resources and managing todos/handoffs.
 
----
+## Attribution
 
-More resources coming soon.
+### Dependencies & Libraries
 
----
+This project aggregates multiple data sources and wraps them into a unified package with an MCP (Model Context Protocol) server, providing compatibility with Claude, Gemini, and Copilot CLI. Some modifications have been made to ensure cross-platform functionality.
 
-**Community Ports:** [OpenCode](https://github.com/stephenschoettler/taches-oc-prompts)
-
-—TÂCHES
+- [OpenCode](https://github.com/stephenschoettler/taches-oc-prompts) - Unlicenced
+- [networkchuck/claude-engineer](https://github.com/networkchuck/claude-engineer) - MIT
+- [networkchuck/agenticSeek](https://github.com/networkchuck/agenticSeek) - MIT
