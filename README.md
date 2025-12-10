@@ -244,7 +244,7 @@ Commands: `/debug`
 | Commands | ✅ All 29 | ✅ 25 (TOML) | ❌ N/A |
 | Agents | ✅ All 9 | ❌ N/A | ✅ 9 (.agent.md) |
 | Skills | ✅ All 7 | ❌ N/A | ❌ N/A |
-| MCP Tools | ✅ 20 | ✅ 20 | ✅ 20 |
+| MCP Tools | ✅ 25 | ✅ 25 | ✅ 25 |
 
 ### What's Available Per CLI
 
@@ -265,7 +265,16 @@ Commands: `/debug`
 
 ### MCP Tools (All CLIs)
 
-The MCP server provides 20 tools available to all CLIs:
+The MCP server provides 25 tools available to all CLIs:
+
+**Time Tracking:**
+- `start_timer` - Start tracking time for a task
+- `stop_timer` - Stop timer and log entry
+- `log_time` - Manual time entry (e.g., "1h30m")
+- `list_time_entries` - View recent time entries
+- `time_summary` - Get time totals by project
+
+Set `TOGGL_API_KEY` environment variable to automatically sync entries to Toggl.
 
 **Todo Management:**
 - `add_todo` - Add todo item to TO-DOS.md

@@ -508,6 +508,342 @@ def get_handoff() -> str:
 
 
 # ============================================================================
+# TIME TRACKING
+# ============================================================================
+
+def get_time_tracking_file() -> Path:
+    """Get the time tracking JSON file path."""
+    return get_workspace() / "time-tracking.json"
+
+
+def load_time_tracking() -> dict:
+    """Load time tracking data from JSON file."""
+    tf = get_time_tracking_file()
+    if tf.exists():
+        try:
+            return json.loads(tf.read_text())
+        except json.JSONDecodeError:
+            pass
+    return {"entries": [], "active_timer": None}
+
+
+def save_time_tracking(data: dict) -> None:
+    """Save time tracking data to JSON file."""
+    tf = get_time_tracking_file()
+    tf.write_text(json.dumps(data, indent=2))
+
+
+def parse_duration(duration_str: str) -> int:
+    """Parse duration string like '1h30m', '45m', '2h' to minutes."""
+    import re
+    total_minutes = 0
+
+    # Match hours
+    hours_match = re.search(r'(\d+)h', duration_str)
+    if hours_match:
+        total_minutes += int(hours_match.group(1)) * 60
+
+    # Match minutes
+    minutes_match = re.search(r'(\d+)m', duration_str)
+    if minutes_match:
+        total_minutes += int(minutes_match.group(1))
+
+    # If just a number, assume minutes
+    if total_minutes == 0 and duration_str.isdigit():
+        total_minutes = int(duration_str)
+
+    return total_minutes
+
+
+def format_duration(minutes: int) -> str:
+    """Format minutes as 'Xh Ym' string."""
+    if minutes < 60:
+        return f"{minutes}m"
+    hours = minutes // 60
+    mins = minutes % 60
+    if mins == 0:
+        return f"{hours}h"
+    return f"{hours}h {mins}m"
+
+
+def sync_to_toggl(task: str, start_iso: str, duration_minutes: int, project: str = "") -> bool:
+    """Sync time entry to Toggl if API key is configured."""
+    import urllib.request
+    import urllib.error
+    import base64
+
+    api_key = os.environ.get("TOGGL_API_KEY")
+    if not api_key:
+        return False
+
+    # Toggl API v9
+    url = "https://api.track.toggl.com/api/v9/me/time_entries"
+
+    # Build payload
+    payload = {
+        "description": task,
+        "start": start_iso,
+        "duration": duration_minutes * 60,  # Toggl wants seconds
+        "created_with": "ai-cli-mcp"
+    }
+
+    if project:
+        payload["tags"] = [project]
+
+    # Toggl uses basic auth with API key as username
+    auth_string = base64.b64encode(f"{api_key}:api_token".encode()).decode()
+
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode('utf-8'),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Basic {auth_string}"
+            },
+            method="POST"
+        )
+        urllib.request.urlopen(req, timeout=10)
+        return True
+    except urllib.error.URLError:
+        return False
+
+
+@mcp.tool()
+def start_timer(task: str, project: str = "") -> str:
+    """Start tracking time for a task.
+
+    Args:
+        task: Description of what you're working on
+        project: Optional project name
+    """
+    from datetime import datetime
+    import uuid
+
+    data = load_time_tracking()
+
+    # Check if timer already running
+    if data.get("active_timer"):
+        active = data["active_timer"]
+        return f"Error: Timer already running for '{active['task']}' since {active['start']}"
+
+    # Start new timer
+    data["active_timer"] = {
+        "id": str(uuid.uuid4()),
+        "task": task,
+        "project": project,
+        "start": datetime.now().isoformat()
+    }
+
+    save_time_tracking(data)
+
+    return f"Timer started: {task}" + (f" [{project}]" if project else "")
+
+
+@mcp.tool()
+def stop_timer() -> str:
+    """Stop the current timer and log the time entry."""
+    from datetime import datetime
+
+    data = load_time_tracking()
+
+    if not data.get("active_timer"):
+        return "Error: No timer running"
+
+    active = data["active_timer"]
+    start_time = datetime.fromisoformat(active["start"])
+    end_time = datetime.now()
+    duration_minutes = int((end_time - start_time).total_seconds() / 60)
+
+    # Create entry
+    entry = {
+        "id": active["id"],
+        "task": active["task"],
+        "project": active.get("project", ""),
+        "start": active["start"],
+        "end": end_time.isoformat(),
+        "duration_minutes": duration_minutes,
+        "synced_to_toggl": False
+    }
+
+    # Try Toggl sync
+    if sync_to_toggl(entry["task"], entry["start"], duration_minutes, entry["project"]):
+        entry["synced_to_toggl"] = True
+
+    # Save entry
+    data["entries"].append(entry)
+    data["active_timer"] = None
+    save_time_tracking(data)
+
+    duration_str = format_duration(duration_minutes)
+    result = f"Stopped: {entry['task']} - {duration_str}"
+    if entry["synced_to_toggl"]:
+        result += " (synced to Toggl)"
+
+    return result
+
+
+@mcp.tool()
+def log_time(task: str, duration: str, project: str = "", date: str = "") -> str:
+    """Log a manual time entry.
+
+    Args:
+        task: Description of what you worked on
+        duration: Duration string like '1h30m', '45m', '2h'
+        project: Optional project name
+        date: Optional date (YYYY-MM-DD), defaults to today
+    """
+    from datetime import datetime
+    import uuid
+
+    duration_minutes = parse_duration(duration)
+    if duration_minutes == 0:
+        return "Error: Invalid duration format. Use '1h30m', '45m', '2h', etc."
+
+    # Parse or default date
+    if date:
+        try:
+            entry_date = datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            return "Error: Invalid date format. Use YYYY-MM-DD"
+    else:
+        entry_date = datetime.now()
+
+    # Create start time at 9am on that day
+    start_time = entry_date.replace(hour=9, minute=0, second=0, microsecond=0)
+    end_time = start_time.replace(
+        hour=9 + duration_minutes // 60,
+        minute=duration_minutes % 60
+    )
+
+    entry = {
+        "id": str(uuid.uuid4()),
+        "task": task,
+        "project": project,
+        "start": start_time.isoformat(),
+        "end": end_time.isoformat(),
+        "duration_minutes": duration_minutes,
+        "synced_to_toggl": False
+    }
+
+    # Try Toggl sync
+    if sync_to_toggl(task, entry["start"], duration_minutes, project):
+        entry["synced_to_toggl"] = True
+
+    # Save
+    data = load_time_tracking()
+    data["entries"].append(entry)
+    save_time_tracking(data)
+
+    duration_str = format_duration(duration_minutes)
+    result = f"Logged: {task} - {duration_str}"
+    if project:
+        result += f" [{project}]"
+    if entry["synced_to_toggl"]:
+        result += " (synced to Toggl)"
+
+    return result
+
+
+@mcp.tool()
+def list_time_entries(days: int = 7) -> str:
+    """List recent time entries.
+
+    Args:
+        days: Number of days to look back (default 7)
+    """
+    from datetime import datetime, timedelta
+
+    data = load_time_tracking()
+    cutoff = datetime.now() - timedelta(days=days)
+
+    recent = []
+    for entry in data.get("entries", []):
+        try:
+            entry_time = datetime.fromisoformat(entry["start"])
+            if entry_time >= cutoff:
+                recent.append({
+                    "task": entry["task"],
+                    "project": entry.get("project", ""),
+                    "date": entry_time.strftime("%Y-%m-%d"),
+                    "duration": format_duration(entry["duration_minutes"]),
+                    "duration_minutes": entry["duration_minutes"],
+                    "synced": entry.get("synced_to_toggl", False)
+                })
+        except (KeyError, ValueError):
+            continue
+
+    # Sort by date descending
+    recent.sort(key=lambda x: x["date"], reverse=True)
+
+    result = {
+        "entries": recent,
+        "count": len(recent),
+        "period_days": days
+    }
+
+    # Include active timer if any
+    if data.get("active_timer"):
+        active = data["active_timer"]
+        start_time = datetime.fromisoformat(active["start"])
+        elapsed = int((datetime.now() - start_time).total_seconds() / 60)
+        result["active_timer"] = {
+            "task": active["task"],
+            "project": active.get("project", ""),
+            "started": active["start"],
+            "elapsed": format_duration(elapsed)
+        }
+
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+def time_summary(days: int = 7) -> str:
+    """Get time summary grouped by project.
+
+    Args:
+        days: Number of days to summarize (default 7)
+    """
+    from datetime import datetime, timedelta
+    from collections import defaultdict
+
+    data = load_time_tracking()
+    cutoff = datetime.now() - timedelta(days=days)
+
+    by_project = defaultdict(lambda: {"minutes": 0, "tasks": []})
+    total_minutes = 0
+
+    for entry in data.get("entries", []):
+        try:
+            entry_time = datetime.fromisoformat(entry["start"])
+            if entry_time >= cutoff:
+                project = entry.get("project") or "(no project)"
+                minutes = entry["duration_minutes"]
+                by_project[project]["minutes"] += minutes
+                by_project[project]["tasks"].append(entry["task"])
+                total_minutes += minutes
+        except (KeyError, ValueError):
+            continue
+
+    # Build summary
+    summary = {
+        "period_days": days,
+        "total": format_duration(total_minutes),
+        "total_minutes": total_minutes,
+        "by_project": {}
+    }
+
+    for project, data in sorted(by_project.items(), key=lambda x: -x[1]["minutes"]):
+        summary["by_project"][project] = {
+            "total": format_duration(data["minutes"]),
+            "total_minutes": data["minutes"],
+            "task_count": len(set(data["tasks"]))
+        }
+
+    return json.dumps(summary, indent=2)
+
+
+# ============================================================================
 # DEV TOOLS
 # ============================================================================
 
