@@ -14,7 +14,7 @@ Dream big. Happy building.
 
 ## What's Inside
 
-**[Commands](#commands)** (27 total) - Slash commands that expand into structured workflows
+**[Commands](#commands)** (28 total) - Slash commands that expand into structured workflows
 - **Meta-Prompting**: Separate planning from execution with staged prompts
 - **Todo Management**: Capture context mid-work, resume later with full state
 - **Thinking Models**: Mental frameworks (first principles, inversion, 80/20, etc.)
@@ -29,10 +29,10 @@ Dream big. Happy building.
 - **Create Hooks**: Build event-driven automation
 - **Debug Like Expert**: Systematic debugging with evidence gathering and hypothesis testing
 
-**[Agents](#agents)** (3 total) - Specialized subagents for validation and quality
-- **skill-auditor**: Reviews skills for best practices compliance
-- **slash-command-auditor**: Reviews commands for proper structure
-- **subagent-auditor**: Reviews agent configurations for effectiveness
+**[Agents](#agents)** (9 total) - Specialized subagents for validation and quality
+- **kitt-skill-auditor**: Reviews skills for best practices compliance
+- **kitt-slash-command-auditor**: Reviews commands for proper structure
+- **kitt-subagent-auditor**: Reviews agent configurations for effectiveness
 
 ## Installation
 
@@ -47,7 +47,7 @@ ai-cli --init
 
 This installs resources for all supported CLIs:
 - **Claude Code**: Commands, agents, and skills symlinked to `~/.claude/`
-- **Gemini CLI**: Commands converted to TOML in `~/.gemini/commands/ai/`
+- **Gemini CLI**: Commands converted to TOML in `~/.gemini/commands/`
 - **Copilot CLI**: Agents converted to `.agent.md` in `~/.copilot/agents/`
 
 All CLIs also get MCP server access for shared resources.
@@ -56,18 +56,19 @@ All CLIs also get MCP server access for shared resources.
 
 **Claude Code:**
 ```
-/ai:consider:pareto          # Slash commands
-@ai/code-reviewer            # Agents
+/kitt-consider-pareto        # Slash commands
+@kitt-code-reviewer          # Agents
+kitt-create-plans            # Skills
 ```
 
 **Gemini CLI:**
 ```
-/ai:consider:pareto          # Slash commands (TOML format)
+/kitt-consider-pareto        # Slash commands (TOML format)
 ```
 
 **Copilot CLI:**
 ```
-/agent code-reviewer         # Custom agents
+/agent kitt-code-reviewer    # Custom agents
 ```
 
 ### Alternative: Claude Plugin Install
@@ -84,6 +85,7 @@ git clone https://github.com/glittercowboy/taches-cc-resources.git
 cd taches-cc-resources
 cp -r commands/* ~/.claude/commands/
 cp -r skills/* ~/.claude/skills/
+cp -r agents/* ~/.claude/agents/
 ```
 
 ## Commands
@@ -92,148 +94,135 @@ cp -r skills/* ~/.claude/skills/
 
 Separate analysis from execution. Describe what you want in natural language, Claude generates a rigorous prompt, then runs it in a fresh sub-agent context.
 
-- [`/create-prompt`](./commands/create-prompt.md) - Generate optimized prompts with XML structure
-- [`/run-prompt`](./commands/run-prompt.md) - Execute saved prompts in sub-agent contexts
+- [`/kitt-create-prompt`](./commands/kitt-create-prompt.md) - Generate optimized prompts with XML structure
+- [`/kitt-run-prompt`](./commands/kitt-run-prompt.md) - Execute saved prompts in sub-agent contexts
 
 ### Todo Management
 
 Capture ideas mid-conversation without derailing current work. Resume later with full context intact.
 
-- [`/add-to-todos`](./commands/add-to-todos.md) - Capture tasks with full context
-- [`/check-todos`](./commands/check-todos.md) - Resume work on captured tasks
+- [`/kitt-add-to-todos`](./commands/kitt-add-to-todos.md) - Capture tasks with full context
+- [`/kitt-check-todos`](./commands/kitt-check-todos.md) - Resume work on captured tasks
 
 ### Context Handoff
 
 Create structured handoff documents to continue work in a fresh context. Reference with `@whats-next.md` to resume seamlessly.
 
-- [`/whats-next`](./commands/whats-next.md) - Create handoff document for fresh context
+- [`/kitt-whats-next`](./commands/kitt-whats-next.md) - Create handoff document for fresh context
 
 ### Create Extensions
 
 Wrapper commands that invoke the skills below.
 
-- [`/create-agent-skill`](./commands/create-agent-skill.md) - Create a new skill
-- [`/create-meta-prompt`](./commands/create-meta-prompt.md) - Create staged workflow prompts
-- [`/create-slash-command`](./commands/create-slash-command.md) - Create a new slash command
-- [`/create-subagent`](./commands/create-subagent.md) - Create a new subagent
-- [`/create-hook`](./commands/create-hook.md) - Create a new hook
+- [`/kitt-create-agent-skill`](./commands/kitt-create-agent-skill.md) - Create a new skill
+- [`/kitt-create-meta-prompt`](./commands/kitt-create-meta-prompt.md) - Create staged workflow prompts
+- [`/kitt-create-slash-command`](./commands/kitt-create-slash-command.md) - Create a new slash command
+- [`/kitt-create-subagent`](./commands/kitt-create-subagent.md) - Create a new subagent
+- [`/kitt-create-hook`](./commands/kitt-create-hook.md) - Create a new hook
+- [`/kitt-create-plan`](./commands/kitt-create-plan.md) - Create hierarchical project plans
 
 ### Audit Extensions
 
 Invoke auditor subagents.
 
-- [`/audit-skill`](./commands/audit-skill.md) - Audit skill for best practices
-- [`/audit-slash-command`](./commands/audit-slash-command.md) - Audit command for best practices
-- [`/audit-subagent`](./commands/audit-subagent.md) - Audit subagent for best practices
+- [`/kitt-audit-skill`](./commands/kitt-audit-skill.md) - Audit skill for best practices
+- [`/kitt-audit-slash-command`](./commands/kitt-audit-slash-command.md) - Audit command for best practices
+- [`/kitt-audit-subagent`](./commands/kitt-audit-subagent.md) - Audit subagent for best practices
 
 ### Self-Improvement
 
-- [`/heal-skill`](./commands/heal-skill.md) - Fix skills based on execution issues
+- [`/kitt-heal-skill`](./commands/kitt-heal-skill.md) - Fix skills based on execution issues
 
 ### Thinking Models
 
 Apply mental frameworks to decisions and problems.
 
-- [`/consider:pareto`](./commands/consider/pareto.md) - Apply 80/20 rule to focus on what matters
-- [`/consider:first-principles`](./commands/consider/first-principles.md) - Break down to fundamentals and rebuild
-- [`/consider:inversion`](./commands/consider/inversion.md) - Solve backwards (what guarantees failure?)
-- [`/consider:second-order`](./commands/consider/second-order.md) - Think through consequences of consequences
-- [`/consider:5-whys`](./commands/consider/5-whys.md) - Drill to root cause
-- [`/consider:occams-razor`](./commands/consider/occams-razor.md) - Find simplest explanation
-- [`/consider:one-thing`](./commands/consider/one-thing.md) - Identify highest-leverage action
-- [`/consider:swot`](./commands/consider/swot.md) - Map strengths, weaknesses, opportunities, threats
-- [`/consider:eisenhower-matrix`](./commands/consider/eisenhower-matrix.md) - Prioritize by urgent/important
-- [`/consider:10-10-10`](./commands/consider/10-10-10.md) - Evaluate across time horizons
-- [`/consider:opportunity-cost`](./commands/consider/opportunity-cost.md) - Analyze what you give up
-- [`/consider:via-negativa`](./commands/consider/via-negativa.md) - Improve by removing
+- [`/kitt-consider-pareto`](./commands/kitt-consider-pareto.md) - Apply 80/20 rule to focus on what matters
+- [`/kitt-consider-first-principles`](./commands/kitt-consider-first-principles.md) - Break down to fundamentals and rebuild
+- [`/kitt-consider-inversion`](./commands/kitt-consider-inversion.md) - Solve backwards (what guarantees failure?)
+- [`/kitt-consider-second-order`](./commands/kitt-consider-second-order.md) - Think through consequences of consequences
+- [`/kitt-consider-5-whys`](./commands/kitt-consider-5-whys.md) - Drill to root cause
+- [`/kitt-consider-occams-razor`](./commands/kitt-consider-occams-razor.md) - Find simplest explanation
+- [`/kitt-consider-one-thing`](./commands/kitt-consider-one-thing.md) - Identify highest-leverage action
+- [`/kitt-consider-swot`](./commands/kitt-consider-swot.md) - Map strengths, weaknesses, opportunities, threats
+- [`/kitt-consider-eisenhower-matrix`](./commands/kitt-consider-eisenhower-matrix.md) - Prioritize by urgent/important
+- [`/kitt-consider-10-10-10`](./commands/kitt-consider-10-10-10.md) - Evaluate across time horizons
+- [`/kitt-consider-opportunity-cost`](./commands/kitt-consider-opportunity-cost.md) - Analyze what you give up
+- [`/kitt-consider-via-negativa`](./commands/kitt-consider-via-negativa.md) - Improve by removing
 
 ### Deep Analysis
 
 Systematic debugging with methodical investigation.
 
-- [`/debug`](./commands/debug.md) - Apply expert debugging methodology to investigate issues
+- [`/kitt-debug`](./commands/kitt-debug.md) - Apply expert debugging methodology to investigate issues
+
+### Plan Execution
+
+- [`/kitt-run-plan`](./commands/kitt-run-plan.md) - Execute PLAN.md files with intelligent segmentation
 
 ## Agents
 
-Specialized subagents used by the audit commands.
+Specialized subagents for code review, architecture, and auditing.
 
-- [`skill-auditor`](./agents/skill-auditor.md) - Expert skill auditor for best practices compliance
-- [`slash-command-auditor`](./agents/slash-command-auditor.md) - Expert slash command auditor
-- [`subagent-auditor`](./agents/subagent-auditor.md) - Expert subagent configuration auditor
+- [`kitt-architect`](./agents/kitt-architect.md) - Software architecture advisor
+- [`kitt-code-auditor`](./agents/kitt-code-auditor.md) - Code quality and security auditor
+- [`kitt-code-reviewer`](./agents/kitt-code-reviewer.md) - Thorough code reviewer
+- [`kitt-mentor`](./agents/kitt-mentor.md) - Patient teacher and guide
+- [`kitt-refactor`](./agents/kitt-refactor.md) - Clean up and improve existing code
+- [`kitt-angular-perfectionist-reviewer`](./agents/kitt-angular-perfectionist-reviewer.md) - Angular-specific reviewer
+- [`kitt-skill-auditor`](./agents/kitt-skill-auditor.md) - Expert skill auditor for best practices compliance
+- [`kitt-slash-command-auditor`](./agents/kitt-slash-command-auditor.md) - Expert slash command auditor
+- [`kitt-subagent-auditor`](./agents/kitt-subagent-auditor.md) - Expert subagent configuration auditor
 
 ## Skills
 
-### [Create Plans](./skills/create-plans/)
+### [kitt-create-plans](./skills/kitt-create-plans/)
 
 Hierarchical project planning optimized for solo developer + Claude. Create executable plans that Claude runs, not enterprise documentation that sits unused.
 
 **PLAN.md IS the prompt** - not documentation that gets transformed later. Brief → Roadmap → Research (if needed) → PLAN.md → Execute → SUMMARY.md.
 
-**Domain-aware:** Optionally loads framework-specific expertise from `~/.claude/skills/expertise/` (e.g., macos-apps, iphone-apps) to make plans concrete instead of generic. Domain expertise skills are created with [create-agent-skills](#create-agent-skills) - exhaustive knowledge bases (5k-10k+ lines) that make task specifications framework-appropriate.
+**Domain-aware:** Optionally loads framework-specific expertise from `~/.claude/skills/expertise/` (e.g., macos-apps, iphone-apps) to make plans concrete instead of generic.
 
-**Quality controls:** Research includes verification checklists, blind spots review, critical claims audits, and streaming writes to prevent gaps and token limit failures.
+**Commands:** `/kitt-create-plan` (invoke skill), `/kitt-run-plan <path>` (execute PLAN.md with intelligent segmentation)
 
-**Context management:** Auto-handoff at 10% tokens remaining. Git versioning commits outcomes, not process.
+See [kitt-create-plans README](./skills/kitt-create-plans/README.md) for full documentation.
 
-**Commands:** `/create-plan` (invoke skill), `/run-plan <path>` (execute PLAN.md with intelligent segmentation)
-
-See [create-plans README](./skills/create-plans/README.md) for full documentation.
-
-### [Create Agent Skills](./skills/create-agent-skills/)
+### [kitt-create-agent-skills](./skills/kitt-create-agent-skills/)
 
 Build skills by describing what you want. Asks clarifying questions, researches APIs if needed, and generates properly structured skill files.
 
-**Two types of skills:**
-1. **Task-execution skills** - Regular skills that perform specific operations
-2. **Domain expertise skills** - Exhaustive knowledge bases (5k-10k+ lines) that live in `~/.claude/skills/expertise/` and provide framework-specific context to other skills like [create-plans](#create-plans)
+Commands: `/kitt-create-agent-skill`, `/kitt-heal-skill`, `/kitt-audit-skill`
 
-**Context-aware:** Detects if you're in a skill directory and presents relevant options. Progressive disclosure guides you through complex choices.
+### [kitt-create-meta-prompts](./skills/kitt-create-meta-prompts/)
 
-When things don't work perfectly, `/heal-skill` analyzes what went wrong and updates the skill based on what actually worked.
+Builds prompts with structured outputs (research.md, plan.md) that subsequent prompts can parse. Adds automatic dependency detection to chain research → plan → implement workflows.
 
-Commands: `/create-agent-skill`, `/heal-skill`, `/audit-skill`
+Commands: `/kitt-create-meta-prompt`
 
-### [Create Meta-Prompts](./skills/create-meta-prompts/)
+### [kitt-create-slash-commands](./skills/kitt-create-slash-commands/)
 
-The skill-based evolution of the meta-prompting system. Builds prompts with structured outputs (research.md, plan.md) that subsequent prompts can parse. Adds automatic dependency detection to chain research → plan → implement workflows.
+Build commands that expand into full prompts when invoked.
 
-**Note:** For end-to-end project building, consider [create-plans](#create-plans) - it's the more structured evolution of this approach with full lifecycle management (brief → roadmap → execution → handoffs). Use create-meta-prompts for abstract workflows and Claude→Claude pipelines. Use create-plans for actually building projects.
+Commands: `/kitt-create-slash-command`, `/kitt-audit-slash-command`
 
-Commands: `/create-meta-prompt`
+### [kitt-create-subagents](./skills/kitt-create-subagents/)
 
-### [Create Slash Commands](./skills/create-slash-commands/)
+Build specialized Claude instances that run in isolated contexts.
 
-Build commands that expand into full prompts when invoked. Describe the command you want, get proper YAML configuration with arguments, tool restrictions, and dynamic context loading.
+Commands: `/kitt-create-subagent`, `/kitt-audit-subagent`
 
-Commands: `/create-slash-command`, `/audit-slash-command`
+### [kitt-create-hooks](./skills/kitt-create-hooks/)
 
-### [Create Subagents](./skills/create-subagents/)
+Build event-driven automation that triggers on tool calls, session events, or prompt submissions.
 
-Build specialized Claude instances that run in isolated contexts. Describe the agent's purpose, get optimized system prompts with the right tool access and orchestration patterns.
+Commands: `/kitt-create-hook`
 
-Commands: `/create-subagent`, `/audit-subagent`
+### [kitt-debug-like-expert](./skills/kitt-debug-like-expert/)
 
-### [Create Hooks](./skills/create-hooks/)
+Deep analysis debugging mode for complex issues. Activates methodical investigation protocol with evidence gathering, hypothesis testing, and rigorous verification.
 
-Build event-driven automation that triggers on tool calls, session events, or prompt submissions. Describe what you want to automate, get working hook configurations.
-
-Commands: `/create-hook`
-
-### [Debug Like Expert](./skills/debug-like-expert/)
-
-Deep analysis debugging mode for complex issues. Activates methodical investigation protocol with evidence gathering, hypothesis testing, and rigorous verification. Use when standard troubleshooting fails or when issues require systematic root cause analysis.
-
-Commands: `/debug`
-
----
-
-## Recommended Workflow
-
-**For building projects:** Use `/create-plan` to invoke the [create-plans](#create-plans) skill. After planning, use `/run-plan <path-to-PLAN.md>` to execute phases with intelligent segmentation. This provides hierarchical planning (BRIEF.md → ROADMAP.md → phases/PLAN.md), domain-aware task generation, context management with handoffs, and git versioning.
-
-**For domain expertise:** Use [create-agent-skills](#create-agent-skills) to create exhaustive knowledge bases in `~/.claude/skills/expertise/`. These skills are automatically loaded by create-plans to make task specifications framework-specific instead of generic.
-
-**Other tools:** The [create-meta-prompts](#create-meta-prompts-1) skill and `/create-prompt` + `/run-prompt` commands are available for custom Claude→Claude pipelines that don't fit the project planning structure.
+Commands: `/kitt-debug`
 
 ---
 
@@ -241,31 +230,47 @@ Commands: `/debug`
 
 | Resource Type | Claude Code | Gemini CLI | Copilot CLI |
 |---------------|-------------|------------|-------------|
-| Commands | ✅ All 29 | ✅ 25 (TOML) | ❌ N/A |
+| Commands | ✅ All 28 | ✅ 24 (TOML) | ❌ N/A |
 | Agents | ✅ All 9 | ❌ N/A | ✅ 9 (.agent.md) |
 | Skills | ✅ All 7 | ❌ N/A | ❌ N/A |
-| MCP Tools | ✅ 25 | ✅ 25 | ✅ 25 |
+| MCP Tools | ✅ 36 | ✅ 36 | ✅ 36 |
 
 ### What's Available Per CLI
 
 **Claude Code**: Full access to all commands, agents, and skills.
 
-**Gemini CLI**: 25 commands converted to TOML format:
-- All 12 thinking models (`/ai:consider:*`)
-- Meta-prompting: `create-prompt`, `run-prompt`, `create-plan`, `run-plan`
-- Todo management: `check-todos`, `add-to-todos`
-- Context: `whats-next`
-- Auditing: `audit-skill`, `audit-slash-command`, `audit-subagent`
-- Other: `debug`, `heal-skill`, `create-slash-command`
+**Gemini CLI**: 24 commands converted to TOML format:
+- All 12 thinking models (`/kitt-consider-*`)
+- Meta-prompting: `kitt-create-prompt`, `kitt-run-prompt`, `kitt-create-plan`, `kitt-run-plan`
+- Todo management: `kitt-check-todos`, `kitt-add-to-todos`
+- Context: `kitt-whats-next`
+- Auditing: `kitt-audit-skill`, `kitt-audit-slash-command`, `kitt-audit-subagent`
+- Other: `kitt-debug`, `kitt-heal-skill`, `kitt-create-slash-command`
 
 **Copilot CLI**: 9 agents converted to `.agent.md` format:
-- `architect`, `code-auditor`, `code-reviewer`, `mentor`, `refactor`
-- `angular-perfectionist-reviewer`
-- `skill-auditor`, `slash-command-auditor`, `subagent-auditor`
+- `kitt-architect`, `kitt-code-auditor`, `kitt-code-reviewer`, `kitt-mentor`, `kitt-refactor`
+- `kitt-angular-perfectionist-reviewer`
+- `kitt-skill-auditor`, `kitt-slash-command-auditor`, `kitt-subagent-auditor`
 
 ### MCP Tools (All CLIs)
 
-The MCP server provides 25 tools available to all CLIs:
+The MCP server provides 36 tools available to all CLIs:
+
+**Dice/Random:**
+- `roll_dice` - Roll dice using notation like "2d6+3"
+- `flip_coin` - Flip one or more coins
+- `random_choice` - Pick from comma-separated options
+- `random_number` - Generate random number in range
+
+**Weather:**
+- `get_weather` - Current weather for a location (uses Open-Meteo, no API key)
+- `get_forecast` - Multi-day forecast
+
+**Notes:**
+- `add_note` - Quick note with optional tags
+- `list_notes` - List recent notes, filter by tag
+- `search_notes` - Full-text search in notes
+- `delete_note` - Remove a note
 
 **Time Tracking:**
 - `start_timer` - Start tracking time for a task
@@ -293,10 +298,13 @@ Set `TOGGL_API_KEY` environment variable to automatically sync entries to Toggl.
 
 **Project/Git/Dev:** `list_projects`, `get_project_context`, `git_status`, `git_diff`, `git_log`, `run_npm_script`, `check_build`
 
+**Meta:**
+- `create_mcp_tool` - Generate boilerplate for new MCP tools
+
 ### Skipped Content
 
 Some commands require Claude-specific features (Skill tool, Task tool) with no equivalent:
-- **Commands** (4): `create-hook`, `create-subagent`, `create-meta-prompt`, `create-agent-skill`
+- **Commands** (4): `kitt-create-hook`, `kitt-create-subagent`, `kitt-create-meta-prompt`, `kitt-create-agent-skill`
 - **Skills** (all): Skills are Claude Code-specific
 
 All CLIs get MCP server access for reading shared resources and managing todos/handoffs.

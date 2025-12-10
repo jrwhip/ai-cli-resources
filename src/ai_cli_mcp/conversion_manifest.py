@@ -7,67 +7,67 @@ Classifies commands and agents into tiers for multi-CLI conversion:
 - Tier 3: Claude-specific features, skip for other CLIs
 """
 
-# Commands by tier
+# Commands by tier (all use kitt- prefix now)
 COMMAND_TIERS = {
     'tier1': [
         # Mental models (12)
-        'consider/10-10-10',
-        'consider/5-whys',
-        'consider/eisenhower-matrix',
-        'consider/first-principles',
-        'consider/inversion',
-        'consider/occams-razor',
-        'consider/one-thing',
-        'consider/opportunity-cost',
-        'consider/pareto',
-        'consider/second-order',
-        'consider/swot',
-        'consider/via-negativa',
+        'kitt-consider-10-10-10',
+        'kitt-consider-5-whys',
+        'kitt-consider-eisenhower-matrix',
+        'kitt-consider-first-principles',
+        'kitt-consider-inversion',
+        'kitt-consider-occams-razor',
+        'kitt-consider-one-thing',
+        'kitt-consider-opportunity-cost',
+        'kitt-consider-pareto',
+        'kitt-consider-second-order',
+        'kitt-consider-swot',
+        'kitt-consider-via-negativa',
         # Other generic commands (9)
-        'audit-skill',
-        'audit-slash-command',
-        'audit-subagent',
-        'create-plan',
-        'create-slash-command',
-        'debug',
-        'heal-skill',
-        'run-plan',
-        'run-prompt',
+        'kitt-audit-skill',
+        'kitt-audit-slash-command',
+        'kitt-audit-subagent',
+        'kitt-create-plan',
+        'kitt-create-slash-command',
+        'kitt-debug',
+        'kitt-heal-skill',
+        'kitt-run-plan',
+        'kitt-run-prompt',
         # Now convertible via MCP tools (2)
-        'add-to-todos',
-        'whats-next',
+        'kitt-add-to-todos',
+        'kitt-whats-next',
     ],
     'tier2': [
         # Path references only - need replacement
-        'check-todos',
-        'create-prompt',
+        'kitt-check-todos',
+        'kitt-create-prompt',
     ],
     'tier3': [
         # Claude-specific features - skip (require Skill/Task tool)
-        'create-agent-skill',
-        'create-hook',
-        'create-meta-prompt',
-        'create-subagent',
+        'kitt-create-agent-skill',
+        'kitt-create-hook',
+        'kitt-create-meta-prompt',
+        'kitt-create-subagent',
     ],
 }
 
-# Agents by tier
+# Agents by tier (all use kitt- prefix now)
 AGENT_TIERS = {
     'tier1': [
         # Generic agents
-        'architect',
-        'code-auditor',
-        'code-reviewer',
-        'mentor',
-        'refactor',
+        'kitt-architect',
+        'kitt-code-auditor',
+        'kitt-code-reviewer',
+        'kitt-mentor',
+        'kitt-refactor',
         # Auditors - work via file reading, convertible
-        'skill-auditor',
-        'slash-command-auditor',
-        'subagent-auditor',
+        'kitt-skill-auditor',
+        'kitt-slash-command-auditor',
+        'kitt-subagent-auditor',
     ],
     'tier2': [
         # Path references only
-        'angular-perfectionist-reviewer',
+        'kitt-angular-perfectionist-reviewer',
     ],
     'tier3': [
         # None currently - all agents are convertible

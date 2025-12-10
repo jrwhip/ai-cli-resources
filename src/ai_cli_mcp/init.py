@@ -170,20 +170,49 @@ def setup_claude(workspace: Path) -> None:
         json.dump(data, f, indent=2)
     print(f"  Updated {claude_json}")
 
-    # Symlink commands to workspace's .ai-cli/shared/commands
+    # Clean up old ai/ subdirectory symlinks if they exist
+    for old_path in [
+        get_home() / ".claude" / "commands" / "ai",
+        get_home() / ".claude" / "agents" / "ai",
+        get_home() / ".claude" / "skills" / "ai",
+    ]:
+        if old_path.is_symlink() or old_path.exists():
+            if old_path.is_symlink():
+                old_path.unlink()
+            else:
+                shutil.rmtree(old_path)
+            print(f"  Removed old {old_path}")
+
+    # Symlink individual commands (kitt-* files)
     commands_src = shared_dir / "commands"
-    commands_dst = get_home() / ".claude" / "commands" / "ai"
-    create_or_update_symlink(commands_src, commands_dst)
+    commands_dst_dir = get_home() / ".claude" / "commands"
+    commands_dst_dir.mkdir(parents=True, exist_ok=True)
+    cmd_count = 0
+    for cmd_file in commands_src.glob("kitt-*.md"):
+        create_or_update_symlink(cmd_file, commands_dst_dir / cmd_file.name)
+        cmd_count += 1
+    print(f"  Symlinked {cmd_count} commands to {commands_dst_dir}")
 
-    # Symlink agents to workspace's .ai-cli/shared/agents
+    # Symlink individual agents (kitt-* files)
     agents_src = shared_dir / "agents"
-    agents_dst = get_home() / ".claude" / "agents" / "ai"
-    create_or_update_symlink(agents_src, agents_dst)
+    agents_dst_dir = get_home() / ".claude" / "agents"
+    agents_dst_dir.mkdir(parents=True, exist_ok=True)
+    agent_count = 0
+    for agent_file in agents_src.glob("kitt-*.md"):
+        create_or_update_symlink(agent_file, agents_dst_dir / agent_file.name)
+        agent_count += 1
+    print(f"  Symlinked {agent_count} agents to {agents_dst_dir}")
 
-    # Symlink skills to workspace's .ai-cli/shared/skills
+    # Symlink individual skills (kitt-* directories with SKILL.md)
     skills_src = shared_dir / "skills"
-    skills_dst = get_home() / ".claude" / "skills" / "ai"
-    create_or_update_symlink(skills_src, skills_dst)
+    skills_dst_dir = get_home() / ".claude" / "skills"
+    skills_dst_dir.mkdir(parents=True, exist_ok=True)
+    skill_count = 0
+    for skill_dir in skills_src.iterdir():
+        if skill_dir.is_dir() and skill_dir.name.startswith("kitt-") and (skill_dir / "SKILL.md").exists():
+            create_or_update_symlink(skill_dir, skills_dst_dir / skill_dir.name)
+            skill_count += 1
+    print(f"  Symlinked {skill_count} skills to {skills_dst_dir}")
 
 
 def convert_commands_for_gemini(src_dir: Path, dst_dir: Path) -> tuple[int, int]:
@@ -201,8 +230,8 @@ def convert_commands_for_gemini(src_dir: Path, dst_dir: Path) -> tuple[int, int]
         shutil.rmtree(dst_dir)
     dst_dir.mkdir(parents=True, exist_ok=True)
 
-    # Convert top-level .md files
-    for src_file in src_dir.glob("*.md"):
+    # Convert kitt-*.md files (flat structure)
+    for src_file in src_dir.glob("kitt-*.md"):
         resource_name = src_file.stem
         if not is_convertible(resource_name, 'command'):
             skipped += 1
@@ -213,28 +242,6 @@ def convert_commands_for_gemini(src_dir: Path, dst_dir: Path) -> tuple[int, int]
         dst_file = dst_dir / src_file.with_suffix(".toml").name
         dst_file.write_text(toml_content)
         converted += 1
-
-    # Convert subdirectories (e.g., consider/)
-    for subdir in src_dir.iterdir():
-        if subdir.is_dir():
-            dst_subdir = dst_dir / subdir.name
-            dst_subdir.mkdir(parents=True, exist_ok=True)
-            for src_file in subdir.glob("*.md"):
-                # Resource name includes subdir (e.g., consider/5-whys)
-                resource_name = f"{subdir.name}/{src_file.stem}"
-                if not is_convertible(resource_name, 'command'):
-                    skipped += 1
-                    continue
-
-                content = src_file.read_text()
-                toml_content = to_gemini_toml(content, resource_name)
-                dst_file = dst_subdir / src_file.with_suffix(".toml").name
-                dst_file.write_text(toml_content)
-                converted += 1
-
-            # Remove empty subdirectory
-            if not any(dst_subdir.iterdir()):
-                dst_subdir.rmdir()
 
     return converted, skipped
 
@@ -251,9 +258,15 @@ def setup_gemini(workspace: Path) -> None:
     if update_json_file(gemini_settings, "mcpServers", mcp_config):
         print(f"  Updated {gemini_settings}")
 
-    # Convert commands to TOML format
+    # Clean up old ai/ subdirectory if it exists
+    old_gemini_ai = get_home() / ".gemini" / "commands" / "ai"
+    if old_gemini_ai.exists():
+        shutil.rmtree(old_gemini_ai)
+        print(f"  Removed old {old_gemini_ai}")
+
+    # Convert commands to TOML format (flat, no subdirectory)
     commands_src = shared_dir / "commands"
-    commands_dst = get_home() / ".gemini" / "commands" / "ai"
+    commands_dst = get_home() / ".gemini" / "commands"
     converted, skipped = convert_commands_for_gemini(commands_src, commands_dst)
     print(f"  Converted {converted} commands to {commands_dst}")
     if skipped:
@@ -275,8 +288,8 @@ def convert_agents_for_copilot(src_dir: Path, dst_dir: Path) -> tuple[int, int]:
         shutil.rmtree(dst_dir)
     dst_dir.mkdir(parents=True, exist_ok=True)
 
-    # Convert .md files to .agent.md
-    for src_file in src_dir.glob("*.md"):
+    # Convert kitt-*.md files to .agent.md
+    for src_file in src_dir.glob("kitt-*.md"):
         resource_name = src_file.stem
         if not is_convertible(resource_name, 'agent'):
             skipped += 1
@@ -342,14 +355,14 @@ def initialize_workspace(workspace: Path) -> int:
     print(f"\nWorkspace: {workspace}")
     print(f"Resources: {workspace / '.ai-cli' / 'shared'}")
     print("\nClaude Code:")
-    print("  Commands: /ai:* (e.g., /ai:consider:pareto)")
-    print("  Agents:   @ai/* (e.g., @ai/code-reviewer)")
-    print("  Skills:   ~/.claude/skills/ai/")
+    print("  Commands: /kitt-* (e.g., /kitt-consider-pareto)")
+    print("  Agents:   @kitt-* (e.g., @kitt-code-reviewer)")
+    print("  Skills:   kitt-* (e.g., kitt-create-plans)")
     print("\nGemini CLI:")
-    print("  Commands: /ai:* (e.g., /ai:consider:pareto)")
+    print("  Commands: /kitt-* (e.g., /kitt-consider-pareto)")
     print("\nCopilot CLI:")
-    print("  Agents:   /agent (e.g., code-reviewer)")
-    print("\nAll CLIs: MCP tools available (list_shared_*, get_shared_*)")
+    print("  Agents:   /agent kitt-* (e.g., kitt-code-reviewer)")
+    print("\nAll CLIs: MCP tools available (36 tools)")
     print("\nRestart your CLI to load changes.")
 
     return 0

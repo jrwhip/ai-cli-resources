@@ -844,6 +844,502 @@ def time_summary(days: int = 7) -> str:
 
 
 # ============================================================================
+# DICE / RANDOM TOOLS
+# ============================================================================
+
+@mcp.tool()
+def roll_dice(dice: str = "1d6") -> str:
+    """Roll dice using standard notation.
+
+    Args:
+        dice: Dice notation like "1d6", "2d20", "3d8+5"
+    """
+    import re
+    import random
+
+    # Parse dice notation: XdY+Z or XdY-Z
+    match = re.match(r'^(\d+)d(\d+)([+-]\d+)?$', dice.strip().lower())
+    if not match:
+        return f"Error: Invalid dice notation '{dice}'. Use format like '2d6', '1d20+5'"
+
+    num_dice = int(match.group(1))
+    sides = int(match.group(2))
+    modifier = int(match.group(3)) if match.group(3) else 0
+
+    if num_dice < 1 or num_dice > 100:
+        return "Error: Number of dice must be between 1 and 100"
+    if sides < 2 or sides > 1000:
+        return "Error: Dice sides must be between 2 and 1000"
+
+    rolls = [random.randint(1, sides) for _ in range(num_dice)]
+    total = sum(rolls) + modifier
+
+    result = {
+        "dice": dice,
+        "rolls": rolls,
+        "modifier": modifier,
+        "total": total
+    }
+
+    return json.dumps(result)
+
+
+@mcp.tool()
+def flip_coin(count: int = 1) -> str:
+    """Flip one or more coins.
+
+    Args:
+        count: Number of coins to flip (default 1)
+    """
+    import random
+
+    if count < 1 or count > 100:
+        return "Error: Count must be between 1 and 100"
+
+    flips = [random.choice(["heads", "tails"]) for _ in range(count)]
+
+    heads = flips.count("heads")
+    tails = flips.count("tails")
+
+    result = {
+        "flips": flips,
+        "heads": heads,
+        "tails": tails,
+        "count": count
+    }
+
+    return json.dumps(result)
+
+
+@mcp.tool()
+def random_choice(options: str) -> str:
+    """Pick randomly from comma-separated options.
+
+    Args:
+        options: Comma-separated list of options (e.g., "pizza,tacos,sushi")
+    """
+    import random
+
+    choices = [opt.strip() for opt in options.split(",") if opt.strip()]
+
+    if len(choices) < 2:
+        return "Error: Provide at least 2 comma-separated options"
+
+    choice = random.choice(choices)
+
+    result = {
+        "options": choices,
+        "choice": choice
+    }
+
+    return json.dumps(result)
+
+
+@mcp.tool()
+def random_number(min_val: int = 1, max_val: int = 100) -> str:
+    """Generate a random number in a range.
+
+    Args:
+        min_val: Minimum value (inclusive)
+        max_val: Maximum value (inclusive)
+    """
+    import random
+
+    if min_val >= max_val:
+        return "Error: min_val must be less than max_val"
+
+    number = random.randint(min_val, max_val)
+
+    result = {
+        "min": min_val,
+        "max": max_val,
+        "number": number
+    }
+
+    return json.dumps(result)
+
+
+# ============================================================================
+# WEATHER TOOLS
+# ============================================================================
+
+def geocode_location(location: str) -> tuple[float, float, str] | None:
+    """Geocode a location string to lat/lon using Open-Meteo."""
+    import urllib.request
+    import urllib.parse
+    import urllib.error
+
+    url = f"https://geocoding-api.open-meteo.com/v1/search?name={urllib.parse.quote(location)}&count=1"
+
+    try:
+        with urllib.request.urlopen(url, timeout=10) as response:
+            data = json.loads(response.read().decode())
+            if data.get("results"):
+                r = data["results"][0]
+                display = f"{r.get('name', '')}, {r.get('admin1', '')}, {r.get('country', '')}"
+                return r["latitude"], r["longitude"], display
+    except (urllib.error.URLError, json.JSONDecodeError, KeyError):
+        pass
+    return None
+
+
+@mcp.tool()
+def get_weather(location: str, units: str = "imperial") -> str:
+    """Get current weather for a location.
+
+    Args:
+        location: City name or location (e.g., "Austin, TX" or "Paris, France")
+        units: "imperial" (°F, mph) or "metric" (°C, km/h)
+    """
+    import urllib.request
+    import urllib.error
+
+    # Geocode location
+    geo = geocode_location(location)
+    if not geo:
+        return f"Error: Could not find location '{location}'"
+
+    lat, lon, display_name = geo
+
+    # Build API URL
+    temp_unit = "fahrenheit" if units == "imperial" else "celsius"
+    wind_unit = "mph" if units == "imperial" else "kmh"
+
+    url = (
+        f"https://api.open-meteo.com/v1/forecast?"
+        f"latitude={lat}&longitude={lon}"
+        f"&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m"
+        f"&temperature_unit={temp_unit}&wind_speed_unit={wind_unit}"
+    )
+
+    try:
+        with urllib.request.urlopen(url, timeout=10) as response:
+            data = json.loads(response.read().decode())
+    except (urllib.error.URLError, json.JSONDecodeError) as e:
+        return f"Error fetching weather: {e}"
+
+    current = data.get("current", {})
+
+    # Weather code to description
+    weather_codes = {
+        0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+        45: "Fog", 48: "Depositing rime fog",
+        51: "Light drizzle", 53: "Moderate drizzle", 55: "Dense drizzle",
+        61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain",
+        71: "Slight snow", 73: "Moderate snow", 75: "Heavy snow",
+        80: "Slight rain showers", 81: "Moderate rain showers", 82: "Violent rain showers",
+        95: "Thunderstorm", 96: "Thunderstorm with slight hail", 99: "Thunderstorm with heavy hail"
+    }
+
+    weather_code = current.get("weather_code", 0)
+    conditions = weather_codes.get(weather_code, f"Unknown ({weather_code})")
+
+    temp_symbol = "°F" if units == "imperial" else "°C"
+    wind_symbol = "mph" if units == "imperial" else "km/h"
+
+    result = {
+        "location": display_name,
+        "temperature": f"{current.get('temperature_2m', 'N/A')}{temp_symbol}",
+        "conditions": conditions,
+        "humidity": f"{current.get('relative_humidity_2m', 'N/A')}%",
+        "wind": f"{current.get('wind_speed_10m', 'N/A')} {wind_symbol}",
+        "units": units
+    }
+
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+def get_forecast(location: str, days: int = 3, units: str = "imperial") -> str:
+    """Get weather forecast for a location.
+
+    Args:
+        location: City name or location
+        days: Number of days to forecast (1-7)
+        units: "imperial" (°F) or "metric" (°C)
+    """
+    import urllib.request
+    import urllib.error
+
+    if days < 1 or days > 7:
+        return "Error: Days must be between 1 and 7"
+
+    geo = geocode_location(location)
+    if not geo:
+        return f"Error: Could not find location '{location}'"
+
+    lat, lon, display_name = geo
+
+    temp_unit = "fahrenheit" if units == "imperial" else "celsius"
+
+    url = (
+        f"https://api.open-meteo.com/v1/forecast?"
+        f"latitude={lat}&longitude={lon}"
+        f"&daily=temperature_2m_max,temperature_2m_min,weather_code"
+        f"&temperature_unit={temp_unit}&forecast_days={days}"
+    )
+
+    try:
+        with urllib.request.urlopen(url, timeout=10) as response:
+            data = json.loads(response.read().decode())
+    except (urllib.error.URLError, json.JSONDecodeError) as e:
+        return f"Error fetching forecast: {e}"
+
+    daily = data.get("daily", {})
+
+    weather_codes = {
+        0: "Clear", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+        45: "Fog", 48: "Fog",
+        51: "Drizzle", 53: "Drizzle", 55: "Drizzle",
+        61: "Rain", 63: "Rain", 65: "Heavy rain",
+        71: "Snow", 73: "Snow", 75: "Heavy snow",
+        80: "Showers", 81: "Showers", 82: "Heavy showers",
+        95: "Thunderstorm", 96: "Thunderstorm", 99: "Thunderstorm"
+    }
+
+    temp_symbol = "°F" if units == "imperial" else "°C"
+
+    forecast = []
+    dates = daily.get("time", [])
+    highs = daily.get("temperature_2m_max", [])
+    lows = daily.get("temperature_2m_min", [])
+    codes = daily.get("weather_code", [])
+
+    for i in range(min(days, len(dates))):
+        code = codes[i] if i < len(codes) else 0
+        forecast.append({
+            "date": dates[i],
+            "high": f"{highs[i]}{temp_symbol}" if i < len(highs) else "N/A",
+            "low": f"{lows[i]}{temp_symbol}" if i < len(lows) else "N/A",
+            "conditions": weather_codes.get(code, "Unknown")
+        })
+
+    result = {
+        "location": display_name,
+        "forecast": forecast,
+        "units": units
+    }
+
+    return json.dumps(result, indent=2)
+
+
+# ============================================================================
+# NOTE CAPTURE TOOLS
+# ============================================================================
+
+def get_notes_file() -> Path:
+    """Get the notes JSON file path."""
+    return get_workspace() / "notes.json"
+
+
+def load_notes() -> dict:
+    """Load notes from JSON file."""
+    nf = get_notes_file()
+    if nf.exists():
+        try:
+            return json.loads(nf.read_text())
+        except json.JSONDecodeError:
+            pass
+    return {"notes": []}
+
+
+def save_notes(data: dict) -> None:
+    """Save notes to JSON file."""
+    nf = get_notes_file()
+    nf.write_text(json.dumps(data, indent=2))
+
+
+@mcp.tool()
+def add_note(content: str, tags: str = "") -> str:
+    """Add a quick note with optional tags.
+
+    Args:
+        content: The note content
+        tags: Comma-separated tags (e.g., "todo,api,important")
+    """
+    from datetime import datetime
+    import uuid
+
+    tag_list = [t.strip().lower() for t in tags.split(",") if t.strip()]
+
+    note = {
+        "id": str(uuid.uuid4())[:8],
+        "content": content,
+        "tags": tag_list,
+        "created": datetime.now().isoformat()
+    }
+
+    data = load_notes()
+    data["notes"].append(note)
+    save_notes(data)
+
+    tag_str = f" [{', '.join(tag_list)}]" if tag_list else ""
+    return f"Note added (id: {note['id']}){tag_str}"
+
+
+@mcp.tool()
+def list_notes(tag: str = "", days: int = 30) -> str:
+    """List recent notes, optionally filtered by tag.
+
+    Args:
+        tag: Filter by this tag (optional)
+        days: Number of days to look back (default 30)
+    """
+    from datetime import datetime, timedelta
+
+    data = load_notes()
+    cutoff = datetime.now() - timedelta(days=days)
+
+    notes = []
+    for note in data.get("notes", []):
+        try:
+            created = datetime.fromisoformat(note["created"])
+            if created < cutoff:
+                continue
+            if tag and tag.lower() not in note.get("tags", []):
+                continue
+            notes.append({
+                "id": note["id"],
+                "content": note["content"][:100] + ("..." if len(note["content"]) > 100 else ""),
+                "tags": note.get("tags", []),
+                "created": note["created"]
+            })
+        except (KeyError, ValueError):
+            continue
+
+    notes.sort(key=lambda x: x["created"], reverse=True)
+
+    result = {
+        "notes": notes,
+        "count": len(notes),
+        "filter_tag": tag or None,
+        "filter_days": days
+    }
+
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+def search_notes(query: str) -> str:
+    """Search notes by content.
+
+    Args:
+        query: Search term to find in note content
+    """
+    data = load_notes()
+    query_lower = query.lower()
+
+    matches = []
+    for note in data.get("notes", []):
+        if query_lower in note.get("content", "").lower():
+            matches.append({
+                "id": note["id"],
+                "content": note["content"],
+                "tags": note.get("tags", []),
+                "created": note["created"]
+            })
+
+    matches.sort(key=lambda x: x["created"], reverse=True)
+
+    result = {
+        "query": query,
+        "matches": matches,
+        "count": len(matches)
+    }
+
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+def delete_note(note_id: str) -> str:
+    """Delete a note by its ID.
+
+    Args:
+        note_id: The note ID (shown in list_notes output)
+    """
+    data = load_notes()
+
+    original_count = len(data["notes"])
+    data["notes"] = [n for n in data["notes"] if n.get("id") != note_id]
+
+    if len(data["notes"]) == original_count:
+        return f"Error: Note '{note_id}' not found"
+
+    save_notes(data)
+    return f"Deleted note: {note_id}"
+
+
+# ============================================================================
+# MCP TOOL CREATOR
+# ============================================================================
+
+@mcp.tool()
+def create_mcp_tool(name: str, description: str, params: str = "") -> str:
+    """Generate boilerplate code for a new MCP tool.
+
+    Args:
+        name: Function name for the tool (snake_case)
+        description: What the tool does
+        params: Parameter definitions, comma-separated (e.g., "query:str,limit:int=10")
+    """
+    import re
+
+    # Validate name
+    if not re.match(r'^[a-z][a-z0-9_]*$', name):
+        return "Error: Name must be snake_case (lowercase letters, numbers, underscores)"
+
+    # Parse parameters
+    param_list = []
+    param_docs = []
+
+    if params:
+        for param in params.split(","):
+            param = param.strip()
+            if not param:
+                continue
+
+            # Parse "name:type=default" or "name:type"
+            match = re.match(r'^(\w+):(\w+)(?:=(.+))?$', param)
+            if not match:
+                return f"Error: Invalid param format '{param}'. Use 'name:type' or 'name:type=default'"
+
+            p_name, p_type, p_default = match.groups()
+
+            if p_default:
+                param_list.append(f"{p_name}: {p_type} = {p_default}")
+            else:
+                param_list.append(f"{p_name}: {p_type}")
+
+            param_docs.append(f"        {p_name}: Description")
+
+    # Build function signature
+    params_str = ", ".join(param_list) if param_list else ""
+
+    # Build docstring
+    if param_docs:
+        docstring = f'''    """{description}
+
+    Args:
+{chr(10).join(param_docs)}
+    """'''
+    else:
+        docstring = f'    """{description}"""'
+
+    # Generate code
+    code = f'''@mcp.tool()
+def {name}({params_str}) -> str:
+{docstring}
+    # TODO: Implement
+    result = {{
+        "status": "success"
+    }}
+    return json.dumps(result)
+'''
+
+    return f"Generated MCP tool code:\n\n```python\n{code}```\n\nAdd this to your server.py file."
+
+
+# ============================================================================
 # DEV TOOLS
 # ============================================================================
 
