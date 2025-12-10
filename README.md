@@ -244,7 +244,7 @@ Commands: `/debug`
 | Commands | ✅ All 29 | ✅ 25 (TOML) | ❌ N/A |
 | Agents | ✅ All 9 | ❌ N/A | ✅ 9 (.agent.md) |
 | Skills | ✅ All 7 | ❌ N/A | ❌ N/A |
-| MCP Tools | ✅ 23 | ✅ 23 | ✅ 23 |
+| MCP Tools | ✅ 20 | ✅ 20 | ✅ 20 |
 
 ### What's Available Per CLI
 
@@ -265,7 +265,7 @@ Commands: `/debug`
 
 ### MCP Tools (All CLIs)
 
-The MCP server provides 23 tools available to all CLIs:
+The MCP server provides 20 tools available to all CLIs:
 
 **Todo Management:**
 - `add_todo` - Add todo item to TO-DOS.md

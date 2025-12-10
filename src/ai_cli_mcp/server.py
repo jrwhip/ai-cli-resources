@@ -426,8 +426,31 @@ def complete_todo(title: str) -> str:
     if not found:
         return f"Error: Todo '{title}' not found"
 
-    # Write back
-    todos_file.write_text('\n'.join(new_lines))
+    # Clean up empty sections (## heading with no todo items before next ## or EOF)
+    cleaned_lines = []
+    i = 0
+    while i < len(new_lines):
+        line = new_lines[i]
+        if line.startswith('## '):
+            # Look ahead to find end of this section (next ## heading or EOF)
+            j = i + 1
+            while j < len(new_lines) and not new_lines[j].startswith('## '):
+                j += 1
+            # Check if section has any todo items
+            has_content = any(new_lines[k].strip().startswith('- **') for k in range(i + 1, j))
+            if has_content:
+                cleaned_lines.append(line)
+            # else: skip empty section heading
+        else:
+            cleaned_lines.append(line)
+        i += 1
+
+    # Remove excess blank lines
+    result = '\n'.join(cleaned_lines)
+    while '\n\n\n' in result:
+        result = result.replace('\n\n\n', '\n\n')
+
+    todos_file.write_text(result)
 
     return f"Completed: {title}"
 
