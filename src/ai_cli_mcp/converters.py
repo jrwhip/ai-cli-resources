@@ -74,8 +74,8 @@ def to_gemini_toml(content: str, resource_name: str = '') -> str:
     # Replace argument placeholder
     body = body.replace('$ARGUMENTS', '{{args}}')
 
-    # Escape triple quotes in body if present
-    body = body.replace('"""', '\\"\\"\\"')
+    # Escape triple single quotes in body if present (for TOML literal strings)
+    body = body.replace("'''", "\\'\\'\\'")
 
     # Build TOML
     lines = []
@@ -89,7 +89,8 @@ def to_gemini_toml(content: str, resource_name: str = '') -> str:
         desc = desc.replace('"', '\\"')
         lines.append(f'description = "{desc}"')
 
-    lines.append(f'prompt = """\n{body}\n"""')
+    # Use literal strings (''') to avoid escape processing for backslashes
+    lines.append(f"prompt = '''\n{body}\n'''")
 
     return '\n'.join(lines)
 
