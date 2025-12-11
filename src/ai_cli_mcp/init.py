@@ -88,17 +88,28 @@ def copy_defaults(workspace: Path) -> None:
                             print(f"  Skipped {category}/{subdir.name}/ (exists)")
 
 
-def get_mcp_config(workspace: Path) -> dict:
-    """Generate MCP server configuration."""
-    return {
-        "ai-cli": {
-            "command": "ai-cli",
+def get_mcp_config(workspace: Path, for_copilot: bool = False) -> dict:
+    """Generate MCP server configuration.
+
+    Args:
+        workspace: Path to the workspace directory
+        for_copilot: If True, include 'type' and 'tools' fields required by Copilot CLI
+    """
+    config = {
+        "tool-kitt": {
+            "command": "tool-kitt",
             "args": [],
             "env": {
-                "AI_CLI_WORKSPACE": str(workspace)
+                "TOOL_KITT_WORKSPACE": str(workspace)
             }
         }
     }
+
+    if for_copilot:
+        config["tool-kitt"]["type"] = "local"
+        config["tool-kitt"]["tools"] = ["*"]
+
+    return config
 
 
 def update_json_file(path: Path, key: str, value: dict) -> bool:
@@ -312,7 +323,7 @@ def setup_copilot(workspace: Path) -> None:
     shared_dir = workspace / ".ai-cli" / "shared"
 
     copilot_config = get_home() / ".copilot" / "mcp-config.json"
-    mcp_config = get_mcp_config(workspace)
+    mcp_config = get_mcp_config(workspace, for_copilot=True)
 
     if update_json_file(copilot_config, "mcpServers", mcp_config):
         print(f"  Updated {copilot_config}")
